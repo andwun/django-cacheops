@@ -19,7 +19,7 @@ try:
 except ImportError:
     MAX_GET_RESULTS = None
 
-from .conf import model_profile, redis_client, handle_connection_failure, LRU, ALL_OPS
+from .conf import model_profile, get_redis_client, handle_connection_failure, LRU, ALL_OPS
 from .utils import monkey_mix, get_model_name, stamp_fields, load_script, \
                    func_cache_key, cached_view_fab, get_thread_id, family_has_profile
 from .tree import dnfs
@@ -85,7 +85,7 @@ def cached_as(*samples, **kwargs):
         def wrapper(*args, **kwargs):
             cache_key = 'as:' + key_func(func, args, kwargs, key_extra)
 
-            cache_data = redis_client.get(cache_key)
+            cache_data = get_redis_client(write = False).get(cache_key)
             if cache_data is not None:
                 return pickle.loads(cache_data)
 
@@ -252,7 +252,7 @@ class QuerySetMixin(object):
             cache_key = self._cache_key()
             if not self._cacheconf['write_only'] and not self._for_write:
                 # Trying get data from cache
-                cache_data = redis_client.get(cache_key)
+                cache_data = get_redis_client(write = False).get(cache_key)
                 if cache_data is not None:
                     results = pickle.loads(cache_data)
                     for obj in results:

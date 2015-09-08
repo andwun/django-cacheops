@@ -3,6 +3,7 @@ from copy import deepcopy
 import warnings
 import six
 import redis
+from redis_cache import get_redis_connection
 from funcy import memoize, decorator, identity, is_tuple, merge
 
 from django.conf import settings
@@ -29,6 +30,17 @@ for key in profiles:
     profiles[key] = dict(profile_defaults, **profiles[key])
 
 
+def get_redis_client(write = True):
+    if not hasattr(settings, 'CACHEOPS_CACHE_ALIAS'):
+        raise ImproperlyConfigured("You must specify CACHEOPS_CACHE_ALIAS setting to use cacheops")
+
+    cache_alias = settings.CACHEOPS_CACHE_ALIAS
+    if not isinstance(cache_alias, basestring) or len(cache_alias) == 0:
+        raise ImproperlyConfigured("You must specify CACHEOPS_CACHE_ALIAS setting to use cacheops")
+
+    return get_redis_connection(alias = cache_alias, write = write)
+
+
 LRU = getattr(settings, 'CACHEOPS_LRU', False)
 DEGRADE_ON_FAILURE = getattr(settings, 'CACHEOPS_DEGRADE_ON_FAILURE', False)
 
@@ -45,33 +57,6 @@ if DEGRADE_ON_FAILURE:
             warnings.warn("The cacheops cache timed out! Error: %s" % e, RuntimeWarning)
 else:
     handle_connection_failure = identity
-
-class SafeRedis(redis.StrictRedis):
-    get = handle_connection_failure(redis.StrictRedis.get)
-
-
-class LazyRedis(object):
-    def _setup(self):
-        # Connecting to redis
-        try:
-            redis_conf = settings.CACHEOPS_REDIS
-        except AttributeError:
-            raise ImproperlyConfigured('You must specify CACHEOPS_REDIS setting to use cacheops')
-
-        client = (SafeRedis if DEGRADE_ON_FAILURE else redis.StrictRedis)(**redis_conf)
-
-        object.__setattr__(self, '__class__', client.__class__)
-        object.__setattr__(self, '__dict__', client.__dict__)
-
-    def __getattr__(self, name):
-        self._setup()
-        return getattr(self, name)
-
-    def __setattr__(self, name, value):
-        self._setup()
-        return setattr(self, name, value)
-
-redis_client = LazyRedis()
 
 
 @memoize

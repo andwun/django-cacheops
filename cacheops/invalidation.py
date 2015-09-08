@@ -9,7 +9,7 @@ try:
 except ImportError:
     from django.db.models.expressions import Expression
 
-from .conf import redis_client, handle_connection_failure
+from .conf import get_redis_client, handle_connection_failure
 from .utils import non_proxy, load_script, get_thread_id, NOT_SERIALIZED_FIELDS
 
 
@@ -46,6 +46,7 @@ def invalidate_model(model):
     if no_invalidation.active:
         return
     model = non_proxy(model)
+    redis_client = get_redis_client()
     conjs_keys = redis_client.keys('conj:%s:*' % model._meta.db_table)
     if conjs_keys:
         cache_keys = redis_client.sunion(conjs_keys)
@@ -55,7 +56,7 @@ def invalidate_model(model):
 def invalidate_all():
     if no_invalidation.active:
         return
-    redis_client.flushdb()
+    get_redis_client().flushdb()
 
 
 class _no_invalidation(ContextDecorator):

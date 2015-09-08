@@ -12,7 +12,7 @@ import django
 from django.db import models
 from django.http import HttpRequest
 
-from .conf import redis_client, model_profile
+from .conf import get_redis_client, model_profile
 
 
 # NOTE: we don't serialize this fields since their values could be very long
@@ -177,7 +177,7 @@ def load_script(name, strip=False):
         code = f.read()
     if strip:
         code = STRIP_RE.sub('', code)
-    return redis_client.register_script(code)
+    return get_redis_client().register_script(code)
 
 
 ### Whitespace handling for template tags

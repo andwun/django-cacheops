@@ -5,7 +5,7 @@ from .cross import pickle, md5hex
 from django.conf import settings
 from funcy import wraps
 
-from .conf import redis_client, handle_connection_failure
+from .conf import get_redis_client, handle_connection_failure
 from .utils import func_cache_key, cached_view_fab
 
 
@@ -87,6 +87,7 @@ class RedisCache(BaseCache):
     def __init__(self, conn):
         self.conn = conn
 
+    @handle_connection_failure
     def get(self, cache_key):
         data = self.conn.get(cache_key)
         if data is None:
@@ -105,7 +106,7 @@ class RedisCache(BaseCache):
     def delete(self, cache_key):
         self.conn.delete(cache_key)
 
-cache = RedisCache(redis_client)
+cache = RedisCache(get_redis_client())
 cached = cache.cached
 cached_view = cache.cached_view
 

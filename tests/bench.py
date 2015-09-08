@@ -1,5 +1,5 @@
 from cacheops import invalidate_obj, invalidate_model
-from cacheops.conf import redis_client
+from cacheops.conf import get_redis_client
 from cacheops.cross import pickle
 
 from .models import Category, Post, Extra
@@ -17,7 +17,7 @@ def do_unpickle():
 
 get_key = Category.objects.filter(pk=1).order_by()._cache_key()
 def invalidate_get():
-    redis_client.delete(get_key)
+    get_redis_client().delete(get_key)
 
 def do_get():
     Category.objects.cache().get(pk=1)
@@ -28,7 +28,7 @@ def do_get_no_cache():
 
 count_key = Category.objects.all()._cache_key(extra='count')
 def invalidate_count():
-    redis_client.delete(count_key)
+    get_redis_client().delete(count_key)
 
 def do_count():
     Category.objects.cache().count()
@@ -41,7 +41,7 @@ fetch_qs = Category.objects.all()
 fetch_key = fetch_qs._cache_key()
 
 def invalidate_fetch():
-    redis_client.delete(fetch_key)
+    get_redis_client().delete(fetch_key)
 
 def do_fetch():
     list(Category.objects.cache().all())
