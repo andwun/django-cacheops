@@ -3,7 +3,7 @@ from copy import deepcopy
 import warnings
 import six
 import redis
-from redis_cache import get_redis_connection
+from django_redis import get_redis_connection
 from funcy import memoize, decorator, identity, is_tuple, merge
 
 from django.conf import settings
